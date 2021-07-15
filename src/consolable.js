@@ -1,14 +1,33 @@
-function consolable(promise, prefix = '', stringify = x => x) {
-    prefix = typeof prefix === 'function' ? prefix : x => '';
-    return promise.then(
-        res => {
-            console.log(prefix(), stringify(res));
-            return res;
-        },
-        err => {
-            console.error(prefix(), stringify(err));
-            return Promise.reject(err);
-        });
+const create = function (f) {
+    function $(promise) {
+        return promise.then($.resolve, $.reject);
+    }
+
+    $.create = create;
+
+    $.resolve = function (res) {
+        const data = f(res);
+        console.log(data.prefix, data.content);
+        return res;
+    }
+    $.reject = function (err) {
+        const data = f(err);
+        console.error(data.prefix, data.content);
+        return Promise.reject(err);
+    }
+    $.format = format;
+
+    return $;
 }
 
-module.exports = consolable;
+function format(prefix = '', stringify = x => x) {
+    const getPrefix = typeof prefix === 'function' ? prefix : x => prefix;
+    return function (data) {
+        return {
+            prefix: getPrefix(data),
+            content: stringify(data)
+        }
+    }
+}
+
+module.exports = create(format());
